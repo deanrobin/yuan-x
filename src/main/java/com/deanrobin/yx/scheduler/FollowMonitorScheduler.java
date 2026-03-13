@@ -62,7 +62,7 @@ public class FollowMonitorScheduler {
             try {
                 processWatcher(watcher);
             } catch (Exception e) {
-                log.error("Error checking follow for @{}: {}", watcher.getHandle(), e.getMessage());
+                log.warn("⚠️ [关注监控] 处理 @{} 异常（已跳过）: {}", watcher.getHandle(), e.getMessage());
             }
         }
     }

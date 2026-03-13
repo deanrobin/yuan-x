@@ -40,10 +40,10 @@ public class XApiService {
                 JsonNode root = objectMapper.readTree(response.body());
                 return root.path("data").path("id").asText(null);
             } else {
-                log.warn("Failed to get userId for {}: HTTP {}", handle, response.statusCode());
+                log.warn("⚠️ 获取 userId 失败 @{}: HTTP {}", handle, response.statusCode());
             }
         } catch (Exception e) {
-            log.error("Error fetching userId for {}: {}", handle, e.getMessage());
+            log.warn("⚠️ 获取 userId 异常 @{}: {}", handle, e.getMessage());
         }
         return null;
     }
@@ -82,12 +82,12 @@ public class XApiService {
                     }
                 }
             } else if (response.statusCode() == 429) {
-                log.warn("X API rate limit hit for userId={}", userId);
+                log.warn("⚠️ X API 限流 userId={}", userId);
             } else {
-                log.warn("X API error for userId={}: HTTP {} - {}", userId, response.statusCode(), response.body());
+                log.warn("⚠️ X API 错误 userId={}: HTTP {}", userId, response.statusCode());
             }
         } catch (Exception e) {
-            log.error("Error fetching tweets for userId={}: {}", userId, e.getMessage());
+            log.warn("⚠️ 拉取推文异常 userId={}: {}", userId, e.getMessage());
         }
         return tweets;
     }

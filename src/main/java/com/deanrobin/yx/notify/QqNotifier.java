@@ -51,7 +51,7 @@ public class QqNotifier implements Notifier {
                 log.warn("[QQ] Failed: HTTP {}", response.statusCode());
             }
         } catch (Exception e) {
-            log.error("[QQ] Error: {}", e.getMessage());
+            log.warn("⚠️ [QQ] 发送异常: {}", e.getMessage());
         }
     }
 

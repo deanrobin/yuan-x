@@ -65,7 +65,7 @@ public class LarkNotifier implements Notifier {
                 log.warn("⚠️ [Lark] 发送失败: HTTP {} | {}", response.statusCode(), response.body());
             }
         } catch (Exception e) {
-            log.error("[Lark] Error sending notification: {}", e.getMessage());
+            log.warn("⚠️ [Lark] 发送异常: {}", e.getMessage());
         }
     }
 

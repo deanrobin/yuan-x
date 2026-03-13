@@ -65,10 +65,10 @@ public class BearerTokenProvider {
                 JsonNode root = objectMapper.readTree(response.body());
                 return root.path("access_token").asText(null);
             } else {
-                log.error("Bearer Token fetch failed: HTTP {} - {}", response.statusCode(), response.body());
+                log.error("❌ Bearer Token 请求失败: HTTP {} - {}", response.statusCode(), response.body());
             }
         } catch (Exception e) {
-            log.error("Exception fetching Bearer Token: {}", e.getMessage());
+            log.error("❌ Bearer Token 请求异常: {}", e.getMessage());
         }
         return null;
     }

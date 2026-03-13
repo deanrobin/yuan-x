@@ -22,7 +22,7 @@ public class NotifyDispatcher {
                     try {
                         notifier.send(message);
                     } catch (Exception e) {
-                        log.error("Notifier {} failed: {}", notifier.getClass().getSimpleName(), e.getMessage());
+                        log.warn("⚠️ [Notify] {} 发送异常（已跳过）: {}", notifier.getClass().getSimpleName(), e.getMessage());
                     }
                 });
     }

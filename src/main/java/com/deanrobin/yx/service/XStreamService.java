@@ -194,7 +194,7 @@ public class XStreamService {
             });
 
         } catch (Exception e) {
-            log.error("Failed to handle stream event: {}", e.getMessage());
+            log.warn("⚠️ Stream 事件处理异常（已跳过）: {}", e.getMessage());
         }
     }
 

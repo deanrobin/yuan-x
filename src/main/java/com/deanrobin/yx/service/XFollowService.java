@@ -67,14 +67,14 @@ public class XFollowService {
                     paginationToken = meta.has("next_token") ? meta.path("next_token").asText(null) : null;
 
                 } else if (response.statusCode() == 429) {
-                    log.warn("[XFollowService] Rate limited for userId={}", userId);
+                    log.warn("⚠️ [关注列表] X API 限流 userId={}", userId);
                     break;
                 } else {
-                    log.warn("[XFollowService] HTTP {} for userId={}: {}", response.statusCode(), userId, response.body());
+                    log.warn("⚠️ [关注列表] HTTP {} userId={}", response.statusCode(), userId);
                     break;
                 }
             } catch (Exception e) {
-                log.error("[XFollowService] Error for userId={}: {}", userId, e.getMessage());
+                log.warn("⚠️ [关注列表] 请求异常 userId={}: {}", userId, e.getMessage());
                 break;
             }
         } while (paginationToken != null);

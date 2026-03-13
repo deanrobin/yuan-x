@@ -54,7 +54,7 @@ public class TelegramNotifier implements Notifier {
                 log.warn("[Telegram] Failed: HTTP {}", response.statusCode());
             }
         } catch (Exception e) {
-            log.error("[Telegram] Error: {}", e.getMessage());
+            log.warn("⚠️ [Telegram] 发送异常: {}", e.getMessage());
         }
     }
 
