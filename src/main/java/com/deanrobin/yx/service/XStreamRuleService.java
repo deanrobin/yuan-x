@@ -51,7 +51,7 @@ public class XStreamRuleService {
             return false;
         }
 
-        log.info("Detected account list change: {} → {}", activeHandles, dbHandleSet);
+        log.info("📋 账户列表变更: {} → {}，更新 Stream 规则", activeHandles, dbHandleSet);
         deleteAllRules();
 
         if (!dbHandles.isEmpty()) {
@@ -90,7 +90,7 @@ public class XStreamRuleService {
                 .POST(HttpRequest.BodyPublishers.ofString(json)).build();
 
         httpClient.send(delReq, HttpResponse.BodyHandlers.ofString());
-        log.info("Deleted {} old stream rules.", ids.size());
+        log.info("🗑 已删除 {} 条旧规则", ids.size());
     }
 
     private void addRules(List<String> handles) throws Exception {
@@ -112,8 +112,7 @@ public class XStreamRuleService {
                 .POST(HttpRequest.BodyPublishers.ofString(json)).build();
 
         HttpResponse<String> res = httpClient.send(req, HttpResponse.BodyHandlers.ofString());
-        log.info("Added {} stream rule(s) for {} accounts. Response: {}",
-                rules.size(), handles.size(), res.body());
+        log.info("✅ 规则已更新: {} 个账户 → {} 条规则", handles.size(), rules.size());
     }
 
     /**

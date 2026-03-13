@@ -19,14 +19,15 @@ public class RuleReloadScheduler {
 
     @Scheduled(fixedDelay = 5 * 60 * 1000) // 每 5 分钟
     public void reloadRules() {
-        log.debug("Checking for account list changes...");
         try {
             boolean updated = ruleService.syncRulesFromDb();
             if (updated) {
-                log.info("✅ Stream rules updated from DB.");
+                log.info("🔄 [规则刷新] Stream 规则已更新");
+            } else {
+                log.debug("[规则刷新] 账户列表无变化，跳过");
             }
         } catch (Exception e) {
-            log.error("Failed to reload stream rules: {}", e.getMessage());
+            log.error("❌ [规则刷新] 失败: {}", e.getMessage());
         }
     }
 }

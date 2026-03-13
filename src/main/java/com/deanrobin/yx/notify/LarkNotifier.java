@@ -60,9 +60,9 @@ public class LarkNotifier implements Notifier {
 
             HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
             if (response.statusCode() == 200) {
-                log.info("[Lark] Notified: {}", message.getTweetId());
+                log.info("📨 [Lark] 消息发送成功 | @{} | {}", message.getHandle(), message.getTweetId());
             } else {
-                log.warn("[Lark] Failed: HTTP {} - {}", response.statusCode(), response.body());
+                log.warn("⚠️ [Lark] 发送失败: HTTP {} | {}", response.statusCode(), response.body());
             }
         } catch (Exception e) {
             log.error("[Lark] Error sending notification: {}", e.getMessage());

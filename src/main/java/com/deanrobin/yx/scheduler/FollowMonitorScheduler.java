@@ -56,7 +56,7 @@ public class FollowMonitorScheduler {
             notifyDispatcher.dispatch(warn);
         }
 
-        log.debug("Checking follow changes for {} watcher(s)...", watchers.size());
+        log.info(">>> [关注监控] 开始轮询，共 {} 个账户", watchers.size());
 
         for (FollowWatcher watcher : watchers) {
             try {
@@ -101,7 +101,7 @@ public class FollowMonitorScheduler {
 
         // 首次初始化：DB 为空时直接存快照，不发通知
         if (dbMap.isEmpty() && !currentMap.isEmpty()) {
-            log.info("Initializing follow snapshot for @{}: {} following", watcher.getHandle(), currentMap.size());
+            log.info("📸 @{} 首次快照: {} 个关注，不发通知", watcher.getHandle(), currentMap.size());
             saveSnapshot(watcher.getHandle(), currentMap);
             updateLastChecked(watcher);
             return;
@@ -125,7 +125,7 @@ public class FollowMonitorScheduler {
     }
 
     private void handleNewFollow(FollowWatcher watcher, XFollowService.FollowingUser followed) {
-        log.info("🟢 @{} followed @{}", watcher.getHandle(), followed.getUsername());
+        log.info("🟢 [新增关注] @{} → @{} ({})", watcher.getHandle(), followed.getUsername(), followed.getName());
 
         // 存记录
         FollowRecord record = followRecordRepository
@@ -156,7 +156,7 @@ public class FollowMonitorScheduler {
     }
 
     private void handleUnfollow(FollowWatcher watcher, FollowRecord record) {
-        log.info("🔴 @{} unfollowed @{}", watcher.getHandle(), record.getFollowingHandle());
+        log.info("🔴 [取消关注] @{} ✕ @{} ({})", watcher.getHandle(), record.getFollowingHandle(), record.getFollowingName());
 
         // 更新记录状态
         record.setStatus("unfollowed");

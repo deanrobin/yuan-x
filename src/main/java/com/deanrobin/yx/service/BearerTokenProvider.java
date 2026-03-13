@@ -33,12 +33,12 @@ public class BearerTokenProvider {
 
     @PostConstruct
     public void init() {
-        log.info("Fetching X API Bearer Token...");
+        log.info(">>> 正在获取 X Bearer Token...");
         this.bearerToken = fetchBearerToken();
         if (this.bearerToken != null) {
-            log.info("X API Bearer Token loaded into JVM memory (not persisted to disk).");
+            log.info("✅ Bearer Token 获取成功，已加载到 JVM 内存");
         } else {
-            log.error("Failed to obtain X API Bearer Token. Please check X_API_KEY and X_API_SECRET env vars.");
+            log.error("❌ Bearer Token 获取失败，请检查 X_API_KEY / X_API_SECRET 环境变量");
         }
     }
 

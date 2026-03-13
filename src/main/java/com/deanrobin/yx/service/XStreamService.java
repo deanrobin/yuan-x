@@ -53,9 +53,10 @@ public class XStreamService {
     public void start() {
         executor.submit(() -> {
             try {
+                log.info(">>> 同步 Stream 过滤规则...");
                 ruleService.syncRulesFromDb();
             } catch (Exception e) {
-                log.error("Failed to sync stream rules: {}", e.getMessage());
+                log.error("❌ Stream 规则同步失败: {}", e.getMessage());
             }
             connect();
         });
@@ -92,21 +93,21 @@ public class XStreamService {
                 );
 
                 if (response.statusCode() == 200) {
-                    log.info("✅ Connected to X Filtered Stream. Listening for tweets...");
-                    retryDelay = 5; // 重连成功，重置退避
+                    log.info("✅ X Stream 连接成功，实时监听中...");
+                    retryDelay = 5;
                     readStream(response.body());
                 } else if (response.statusCode() == 429) {
-                    log.warn("X Stream rate limited. Waiting 60s...");
+                    log.warn("⚠️ X Stream 触发限流，等待 60s 后重试");
                     sleep(60);
                 } else {
-                    log.error("X Stream connect failed: HTTP {}", response.statusCode());
+                    log.error("❌ X Stream 连接失败: HTTP {}", response.statusCode());
                     backoffAndRetry();
                 }
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 break;
             } catch (Exception e) {
-                log.error("X Stream error: {}", e.getMessage());
+                log.error("❌ X Stream 异常: {}", e.getMessage());
                 backoffAndRetry();
             }
         }
@@ -124,7 +125,7 @@ public class XStreamService {
             }
         } catch (Exception e) {
             if (running.get()) {
-                log.warn("X Stream disconnected: {}. Reconnecting...", e.getMessage());
+                log.warn("⚠️ X Stream 断开: {}，准备重连...", e.getMessage());
             }
         }
     }
@@ -159,7 +160,7 @@ public class XStreamService {
                 return;
             }
 
-            log.info("🐦 New tweet from @{}: {}", handle, text.substring(0, Math.min(50, text.length())));
+            log.info("🐦 新推文 @{}: {}", handle, text.substring(0, Math.min(60, text.length())));
 
             String tweetUrl = "https://x.com/" + handle + "/status/" + tweetId;
 
