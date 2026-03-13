@@ -12,9 +12,9 @@
     </parent>
 
     <groupId>com.deanrobin</groupId>
-    <artifactId>y-x</artifactId>
+    <artifactId>yuan-x</artifactId>
     <version>0.1.0-SNAPSHOT</version>
-    <name>y-x</name>
+    <name>yuan-x</name>
     <description>X (Twitter) Monitor System</description>
 
     <properties>

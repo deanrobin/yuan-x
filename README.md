@@ -1,4 +1,4 @@
-# y-x — X (Twitter) Monitor System
+# yuan-x — X (Twitter) Monitor System
 
 基于 Spring Boot 的 X (Twitter) 监控系统，用于实时监控目标账号的推文、关键词、互动等数据。
 
@@ -18,7 +18,7 @@
 ## 项目结构
 
 ```
-y-x/
+yuan-x/
 ├── src/
 │   ├── main/
 │   │   ├── java/com/deanrobin/yx/
@@ -60,7 +60,7 @@ spring:
 
 ```bash
 mvn clean package -DskipTests
-java -jar target/y-x-0.1.0-SNAPSHOT.jar
+java -jar target/yuan-x-0.1.0-SNAPSHOT.jar
 ```
 
 ---
