@@ -33,7 +33,8 @@ public class FollowMonitorScheduler {
 
     private static final int RATE_LIMIT_WARN_THRESHOLD = 15;
 
-    @Scheduled(fixedDelay = 30 * 60_000) // 每 30 分钟（Free 版节省配额）
+    // 关注监控暂时关闭，待接入 twitterapi.io 后重新开启
+    // @Scheduled(fixedDelay = 30 * 60_000)
     public void checkFollowChanges() {
         List<FollowWatcher> watchers = watcherRepository.findByEnabledTrue();
         if (watchers.isEmpty()) return;

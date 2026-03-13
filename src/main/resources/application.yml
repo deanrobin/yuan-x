@@ -10,6 +10,9 @@ spring:
     show-sql: false
     database-platform: org.hibernate.dialect.MySQL8Dialect
 
+twitterapiio:
+  api-key: ${TWITTER_API_IO_KEY:}   # 在 application-local.yml 中配置
+
 server:
   port: 8080
 
@@ -27,14 +30,8 @@ x:
     api-secret: ${X_API_SECRET}
     poll-interval-seconds: 900   # 轮询间隔（秒），默认 15 分钟（Free 版配额限制）
 
-  # 监控账户名单
-  accounts:
-    - handle: "elonmusk"
-      name: "Elon Musk"
-      enabled: true
-    - handle: "sama"
-      name: "Sam Altman"
-      enabled: true
+  # 监控账户名单（通过数据库 monitored_account 表管理，此处留空）
+  accounts: []
 
 # ==============================
 # 通知渠道配置

@@ -6,7 +6,7 @@ import com.deanrobin.yx.notify.NotifyMessage;
 import com.deanrobin.yx.repository.MonitoredAccountRepository;
 import com.deanrobin.yx.repository.TweetRecordRepository;
 import com.deanrobin.yx.service.NotifyDispatcher;
-import com.deanrobin.yx.service.XApiService;
+import com.deanrobin.yx.service.TwitterApiIoService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -26,7 +26,7 @@ public class TweetPollScheduler {
 
     private final MonitoredAccountRepository accountRepository;
     private final TweetRecordRepository tweetRecordRepository;
-    private final XApiService xApiService;
+    private final TwitterApiIoService twitterApiIoService;
     private final NotifyDispatcher notifyDispatcher;
 
     @Scheduled(fixedDelayString = "${x.api.poll-interval-seconds:900}000")
@@ -46,19 +46,8 @@ public class TweetPollScheduler {
     }
 
     private void processAccount(MonitoredAccount account) {
-        // 确保有 userId
-        if (account.getXUserId() == null || account.getXUserId().isBlank()) {
-            String userId = xApiService.getUserId(account.getHandle());
-            if (userId == null) {
-                log.warn("⚠️ 无法解析 userId: @{}", account.getHandle());
-                return;
-            }
-            account.setXUserId(userId);
-            accountRepository.save(account);
-        }
-
-        List<XApiService.TweetDto> tweets = xApiService.getLatestTweets(
-                account.getXUserId(), account.getLastTweetId()
+        List<TwitterApiIoService.TweetDto> tweets = twitterApiIoService.getLatestTweets(
+                account.getHandle(), account.getLastTweetId()
         );
 
         if (tweets.isEmpty()) {
@@ -70,11 +59,13 @@ public class TweetPollScheduler {
 
         // 从旧到新处理
         for (int i = tweets.size() - 1; i >= 0; i--) {
-            XApiService.TweetDto tweet = tweets.get(i);
+            TwitterApiIoService.TweetDto tweet = tweets.get(i);
             if (tweetRecordRepository.existsByTweetId(tweet.getId())) continue;
 
             LocalDateTime detectedAt = LocalDateTime.now();
-            String tweetUrl = "https://x.com/" + account.getHandle() + "/status/" + tweet.getId();
+            String tweetUrl = tweet.getTweetUrl() != null && !tweet.getTweetUrl().isBlank()
+                    ? tweet.getTweetUrl()
+                    : "https://x.com/" + account.getHandle() + "/status/" + tweet.getId();
 
             TweetRecord record = new TweetRecord();
             record.setTweetId(tweet.getId());
