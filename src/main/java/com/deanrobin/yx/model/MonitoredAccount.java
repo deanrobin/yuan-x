@@ -20,6 +20,8 @@ public class MonitoredAccount {
 
     private String xUserId;         // X 平台的 user_id（首次查询后缓存）
 
+    private String notes;           // 备注（如：BTC KOL、AI领域等）
+
     private String lastTweetId;     // 最后一条已处理的 tweet_id
 
     private boolean enabled = true;

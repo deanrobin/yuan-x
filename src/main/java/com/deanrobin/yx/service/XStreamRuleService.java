@@ -1,6 +1,6 @@
 package com.deanrobin.yx.service;
 
-import com.deanrobin.yx.config.XConfig;
+import com.deanrobin.yx.repository.MonitoredAccountRepository;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
@@ -15,32 +15,54 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 /**
- * 管理 X Filtered Stream 的过滤规则
- * 规则格式：from:handle1 OR from:handle2
+ * 管理 X Filtered Stream 过滤规则。
+ * 规则来源：数据库中已启用的监控账户。
  */
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class XStreamRuleService {
 
-    private final XConfig xConfig;
     private final BearerTokenProvider bearerTokenProvider;
+    private final MonitoredAccountRepository accountRepository;
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final HttpClient httpClient = HttpClient.newHttpClient();
 
     private static final String RULES_URL = "https://api.twitter.com/2/tweets/search/stream/rules";
 
+    // 当前生效的 handle 集合（内存缓存，用于比对是否需要更新规则）
+    private Set<String> activeHandles = new HashSet<>();
+
     /**
-     * 启动时同步规则：删除旧规则，按账户列表添加新规则
+     * 同步规则：从 DB 加载启用账户，与当前规则比对，有变化才更新。
+     * 初次调用或账户列表变化时重建规则。
      */
-    public void syncRules() throws Exception {
-        log.info("Syncing X stream filter rules...");
+    public synchronized boolean syncRulesFromDb() throws Exception {
+        List<String> dbHandles = accountRepository.findByEnabledTrue()
+                .stream()
+                .map(a -> a.getHandle().toLowerCase())
+                .sorted()
+                .collect(Collectors.toList());
+
+        Set<String> dbHandleSet = new HashSet<>(dbHandles);
+
+        if (dbHandleSet.equals(activeHandles)) {
+            log.debug("Stream rules unchanged, skip update.");
+            return false;
+        }
+
+        log.info("Detected account list change: {} → {}", activeHandles, dbHandleSet);
         deleteAllRules();
-        addRulesFromConfig();
+
+        if (!dbHandles.isEmpty()) {
+            addRules(dbHandles);
+        }
+
+        activeHandles = dbHandleSet;
+        return true;
     }
 
     private void deleteAllRules() throws Exception {
-        // 查询当前规则
         HttpRequest getReq = HttpRequest.newBuilder()
                 .uri(URI.create(RULES_URL))
                 .header("Authorization", "Bearer " + bearerTokenProvider.getBearerToken())
@@ -58,7 +80,6 @@ public class XStreamRuleService {
         List<String> ids = new ArrayList<>();
         data.forEach(rule -> ids.add(rule.path("id").asText()));
 
-        // 批量删除
         Map<String, Object> body = Map.of("delete", Map.of("ids", ids));
         String json = objectMapper.writeValueAsString(body);
 
@@ -68,35 +89,20 @@ public class XStreamRuleService {
                 .header("Content-Type", "application/json")
                 .POST(HttpRequest.BodyPublishers.ofString(json)).build();
 
-        HttpResponse<String> delRes = httpClient.send(delReq, HttpResponse.BodyHandlers.ofString());
-        log.info("Deleted {} old stream rules. Response: {}", ids.size(), delRes.body());
+        httpClient.send(delReq, HttpResponse.BodyHandlers.ofString());
+        log.info("Deleted {} old stream rules.", ids.size());
     }
 
-    private void addRulesFromConfig() throws Exception {
-        if (xConfig.getAccounts() == null || xConfig.getAccounts().isEmpty()) {
-            log.warn("No accounts configured to monitor.");
-            return;
+    private void addRules(List<String> handles) throws Exception {
+        // X 单条规则最长 512 字符，按需分批
+        List<String> rules = buildRuleBatches(handles);
+
+        List<Map<String, String>> addList = new ArrayList<>();
+        for (int i = 0; i < rules.size(); i++) {
+            addList.add(Map.of("value", rules.get(i), "tag", "yx-monitor-" + i));
         }
 
-        // 构建规则：from:handle1 OR from:handle2 ...（X API 单条规则最长 512 字符）
-        List<XConfig.AccountConfig> enabled = xConfig.getAccounts().stream()
-                .filter(XConfig.AccountConfig::isEnabled)
-                .collect(Collectors.toList());
-
-        if (enabled.isEmpty()) {
-            log.warn("No enabled accounts to monitor.");
-            return;
-        }
-
-        String ruleValue = enabled.stream()
-                .map(a -> "from:" + a.getHandle())
-                .collect(Collectors.joining(" OR "));
-
-        String ruleTag = "yx-monitor";
-
-        Map<String, Object> body = Map.of(
-                "add", List.of(Map.of("value", ruleValue, "tag", ruleTag))
-        );
+        Map<String, Object> body = Map.of("add", addList);
         String json = objectMapper.writeValueAsString(body);
 
         HttpRequest req = HttpRequest.newBuilder()
@@ -106,6 +112,33 @@ public class XStreamRuleService {
                 .POST(HttpRequest.BodyPublishers.ofString(json)).build();
 
         HttpResponse<String> res = httpClient.send(req, HttpResponse.BodyHandlers.ofString());
-        log.info("Added stream rule: [{}] | Response: {}", ruleValue, res.body());
+        log.info("Added {} stream rule(s) for {} accounts. Response: {}",
+                rules.size(), handles.size(), res.body());
+    }
+
+    /**
+     * 将 handle 列表拆分为不超过 512 字符的规则批次
+     */
+    private List<String> buildRuleBatches(List<String> handles) {
+        List<String> batches = new ArrayList<>();
+        StringBuilder current = new StringBuilder();
+
+        for (String handle : handles) {
+            String part = "from:" + handle;
+            if (current.length() == 0) {
+                current.append(part);
+            } else if (current.length() + 4 + part.length() <= 512) {
+                current.append(" OR ").append(part);
+            } else {
+                batches.add(current.toString());
+                current = new StringBuilder(part);
+            }
+        }
+        if (current.length() > 0) batches.add(current.toString());
+        return batches;
+    }
+
+    public Set<String> getActiveHandles() {
+        return Collections.unmodifiableSet(activeHandles);
     }
 }

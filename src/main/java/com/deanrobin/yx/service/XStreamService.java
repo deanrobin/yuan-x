@@ -53,7 +53,7 @@ public class XStreamService {
     public void start() {
         executor.submit(() -> {
             try {
-                ruleService.syncRules();
+                ruleService.syncRulesFromDb();
             } catch (Exception e) {
                 log.error("Failed to sync stream rules: {}", e.getMessage());
             }
