@@ -12,8 +12,12 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Base64;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 
 @Slf4j
@@ -80,13 +84,34 @@ public class LarkNotifier implements Notifier {
         return Base64.getEncoder().encodeToString(signBytes);
     }
 
+    private static final DateTimeFormatter API_TIME_FMT =
+            DateTimeFormatter.ofPattern("EEE MMM dd HH:mm:ss xx yyyy", Locale.ENGLISH);
+    private static final DateTimeFormatter DISPLAY_FMT =
+            DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+    private static final ZoneId SHANGHAI = ZoneId.of("Asia/Shanghai");
+
+    /**
+     * 将 twitterapi.io 返回的时间字符串（UTC）转换为上海时间显示
+     * 输入示例：Fri Mar 13 07:48:59 +0000 2026
+     * 输出示例：2026-03-13 15:48:59 (UTC+8)
+     */
+    private String formatTweetTime(String rawTime) {
+        if (rawTime == null || rawTime.isBlank()) return "";
+        try {
+            ZonedDateTime utc = ZonedDateTime.parse(rawTime.trim(), API_TIME_FMT);
+            return utc.withZoneSameInstant(SHANGHAI).format(DISPLAY_FMT) + " (UTC+8)";
+        } catch (Exception e) {
+            return rawTime; // 解析失败原样返回
+        }
+    }
+
     private String buildText(NotifyMessage msg) {
         return String.format(
                 "【X消息】%s (@%s) 发推了！\n\n%s\n\n⏰ %s\n🔗 %s",
                 msg.getDisplayName(),
                 msg.getHandle(),
                 msg.getContent(),
-                msg.getTweetTime(),
+                formatTweetTime(msg.getTweetTime()),
                 msg.getTweetUrl()
         );
     }

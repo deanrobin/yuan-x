@@ -1,4 +1,6 @@
 spring:
+  jackson:
+    time-zone: Asia/Shanghai
   datasource:
     url: jdbc:mysql://43.134.118.142:33066/yuan-x?useSSL=false&serverTimezone=Asia/Shanghai&characterEncoding=UTF-8&allowPublicKeyRetrieval=true
     username: ${DB_USERNAME:arb}
