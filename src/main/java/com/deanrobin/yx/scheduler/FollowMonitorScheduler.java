@@ -31,10 +31,30 @@ public class FollowMonitorScheduler {
     private final XApiService xApiService;
     private final NotifyDispatcher notifyDispatcher;
 
+    private static final int RATE_LIMIT_WARN_THRESHOLD = 15;
+
     @Scheduled(fixedDelay = 60_000) // 每 1 分钟
     public void checkFollowChanges() {
         List<FollowWatcher> watchers = watcherRepository.findByEnabledTrue();
         if (watchers.isEmpty()) return;
+
+        // 超过 15 个账户时发警告（X API 限制：15次/15分钟）
+        if (watchers.size() > RATE_LIMIT_WARN_THRESHOLD) {
+            log.warn("⚠️ Follow watcher count ({}) exceeds X API rate limit (15/15min). Consider increasing poll interval.", watchers.size());
+            NotifyMessage warn = NotifyMessage.builder()
+                    .tweetId("sys-warn-follow-ratelimit-" + System.currentTimeMillis())
+                    .handle("system")
+                    .displayName("系统提示")
+                    .content(String.format(
+                            "⚠️ 当前关注监控账户数量为 %d 个，超过 X API 频率限制（15次/15分钟）。\n建议将轮询间隔从 1 分钟调整为 %d 分钟以上，避免触发限流。\n可修改 FollowMonitorScheduler 中的 fixedDelay 参数。",
+                            watchers.size(),
+                            (watchers.size() / 15) + 1
+                    ))
+                    .tweetUrl("")
+                    .tweetTime(LocalDateTime.now().toString())
+                    .build();
+            notifyDispatcher.dispatch(warn);
+        }
 
         log.debug("Checking follow changes for {} watcher(s)...", watchers.size());
 
