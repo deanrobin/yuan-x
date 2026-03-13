@@ -41,7 +41,7 @@ twitterapiio:
 notify:
   lark:
     enabled: true
-    webhook-url: "https://open.feishu.cn/open-apis/bot/v2/hook/5581e5bb-b771-43eb-94a4-9ca756f7c7e8"
+    webhook-url: ${LARK_WEBHOOK_URL:}   # 在 application-local.yml 中配置
     sign-secret: ""
 
   telegram:
