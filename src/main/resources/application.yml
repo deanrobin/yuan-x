@@ -16,3 +16,40 @@ server:
 logging:
   level:
     com.deanrobin.yx: INFO
+
+# ==============================
+# X (Twitter) API 配置
+# ==============================
+x:
+  api:
+    bearer-token: "your_x_bearer_token_here"
+    poll-interval-seconds: 120   # 轮询间隔（秒），默认 2 分钟
+
+  # 监控账户名单
+  accounts:
+    - handle: "elonmusk"
+      name: "Elon Musk"
+      enabled: true
+    - handle: "sama"
+      name: "Sam Altman"
+      enabled: true
+
+# ==============================
+# 通知渠道配置
+# ==============================
+notify:
+  # Lark (飞书) Webhook —— 默认开启
+  lark:
+    enabled: true
+    webhook-url: "https://open.feishu.cn/open-apis/bot/v2/hook/your_webhook_token"
+
+  # Telegram Bot
+  telegram:
+    enabled: false
+    bot-token: "your_tg_bot_token"
+    chat-id: "your_chat_id"
+
+  # QQ 群机器人
+  qq:
+    enabled: false
+    webhook-url: "http://your_qq_bot_webhook"
