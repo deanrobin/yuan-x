@@ -18,6 +18,7 @@ public class XConfig {
     public static class Api {
         private String apiKey;
         private String apiSecret;
+        private String bearerToken; // 直接配置 Bearer Token（优先级最高）
         private int pollIntervalSeconds = 120;
     }
 

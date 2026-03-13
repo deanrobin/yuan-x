@@ -33,12 +33,20 @@ public class BearerTokenProvider {
 
     @PostConstruct
     public void init() {
-        log.info(">>> 正在获取 X Bearer Token...");
+        // 优先：直接配置的 Bearer Token（application-local.yml 中 x.api.bearer-token）
+        String configToken = xConfig.getApi().getBearerToken();
+        if (configToken != null && !configToken.isBlank()) {
+            this.bearerToken = configToken;
+            log.info("✅ Bearer Token 已从配置文件加载到 JVM 内存");
+            return;
+        }
+        // 降级：用 API Key+Secret 换取（需 Basic 及以上权限）
+        log.info(">>> bearer-token 未配置，尝试用 Key/Secret 换取...");
         this.bearerToken = fetchBearerToken();
         if (this.bearerToken != null) {
             log.info("✅ Bearer Token 获取成功，已加载到 JVM 内存");
         } else {
-            log.error("❌ Bearer Token 获取失败，请检查 X_API_KEY / X_API_SECRET 环境变量");
+            log.error("❌ Bearer Token 获取失败，请检查 X_BEARER_TOKEN / X_API_KEY / X_API_SECRET 环境变量");
         }
     }
 
@@ -47,7 +55,6 @@ public class BearerTokenProvider {
             String apiKey = xConfig.getApi().getApiKey();
             String apiSecret = xConfig.getApi().getApiSecret();
 
-            // Base64 encode "apiKey:apiSecret"
             String credentials = Base64.getEncoder().encodeToString(
                     (apiKey + ":" + apiSecret).getBytes()
             );
