@@ -29,7 +29,9 @@ public class TwitterApiIoService {
 
     private final TwitterApiIoConfig config;
     private final ObjectMapper objectMapper = new ObjectMapper();
-    private final HttpClient httpClient = HttpClient.newHttpClient();
+    private final HttpClient httpClient = HttpClient.newBuilder()
+            .connectTimeout(java.time.Duration.ofSeconds(10))
+            .build();
 
     private static final String BASE_URL = "https://api.twitterapi.io";
 
@@ -57,26 +59,36 @@ public class TwitterApiIoService {
 
             if (response.statusCode() == 200) {
                 JsonNode root = objectMapper.readTree(response.body());
-                // 响应结构：{ status, data: { tweets: [...] } }
+                // 响应结构：{ status, data: { tweets: [...] } }，按时间倒序（最新在前）
                 JsonNode tweets = root.path("data").path("tweets");
                 if (tweets.isArray()) {
                     for (JsonNode tweet : tweets) {
+                        String tweetId = tweet.path("id").asText();
+                        // sinceId 参数在 twitterapi.io 不生效，在此手动过滤旧推文
+                        if (sinceId != null && !sinceId.isBlank()) {
+                            // 推文 ID 是雪花 ID，数值越大越新；跳过 ID ≤ sinceId 的推文
+                            try {
+                                if (Long.parseUnsignedLong(tweetId) <= Long.parseUnsignedLong(sinceId)) {
+                                    break; // 剩余的更旧，直接停止
+                                }
+                            } catch (NumberFormatException ignored) {}
+                        }
                         TweetDto dto = new TweetDto();
-                        dto.setId(tweet.path("id").asText());
+                        dto.setId(tweetId);
                         dto.setText(tweet.path("text").asText());
                         dto.setCreatedAt(tweet.path("createdAt").asText());
                         dto.setTweetUrl(tweet.path("url").asText());
                         result.add(dto);
                     }
                 }
-                log.debug("[twitterapi.io] @{} 返回 {} 条推文", userName, result.size());
+                log.debug("[twitterapi.io] @{} 过滤后新推文 {} 条（sinceId={}）", userName, result.size(), sinceId);
             } else if (response.statusCode() == 429) {
                 log.warn("⚠️ [twitterapi.io] 限流 @{}", userName);
             } else {
                 log.warn("⚠️ [twitterapi.io] HTTP {} @{}: {}", response.statusCode(), userName, response.body());
             }
         } catch (Exception e) {
-            log.warn("⚠️ [twitterapi.io] 请求异常 @{}: {}", userName, e.getMessage());
+            log.warn("⚠️ [twitterapi.io] 请求异常 @{}（{}）: {}", userName, e.getClass().getSimpleName(), e.getMessage());
         }
         return result;
     }
